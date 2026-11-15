@@ -1,0 +1,73 @@
+@keyframes catIdle {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(1deg);
+  }
+}
+
+@keyframes catPurr {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.08) rotate(-3deg); }
+  50% { transform: scale(1.06) rotate(3deg); }
+  75% { transform: scale(1.08) rotate(-2deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes bubbleFloat {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes snapGlow {
+  0%, 100% {
+    filter: drop-shadow(0 2px 8px rgba(255, 101, 132, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 4px 16px rgba(255, 101, 132, 0.7));
+  }
+}
+
+@keyframes recBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+@keyframes cameraFlash {
+  0% { opacity: 0; }
+  20% { opacity: 1; background: #ffffff; }
+  100% { opacity: 0; }
+}
+
+@keyframes countdownPop {
+  0% { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.2); opacity: 1; }
+  85% { transform: scale(0.92); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.flash-active {
+  animation: cameraFlash 0.35s ease-out forwards;
+}
+
+.cat-idle-anim {
+  animation: catIdle 4s ease-in-out infinite;
+}
+
+.cat-purr-active {
+  animation: catPurr 0.5s ease-in-out;
+}
+
+.speech-bubble-float {
+  animation: bubbleFloat 3s ease-in-out infinite;
+}
+
+.snap-title-glow {
+  animation: snapGlow 2.5s ease-in-out infinite;
+}
+
+.led-rec-blink {
+  animation: recBlink 1s step-end infinite;
+}

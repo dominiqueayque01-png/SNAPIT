@@ -3,7 +3,10 @@ export default function CountdownOverlay({ countdown }) {
 
   return (
     <div className="countdown-overlay">
-      <div className={`countdown-bubble ${typeof countdown === "string" ? "smile" : ""}`}>
+      <div
+        key={String(countdown)}
+        className={`countdown-bubble ${typeof countdown === "string" ? "smile" : ""}`}
+      >
         {countdown}
       </div>
     </div>

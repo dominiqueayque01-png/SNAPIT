@@ -1,18 +1,34 @@
 import { useState, useRef } from "react";
-import { Camera, Wand2, RotateCcw, Heart } from "lucide-react";
+import {
+  Camera,
+  SlidersHorizontal,
+  RotateCcw,
+  ArrowLeft,
+  Images,
+  Aperture,
+  ShieldCheck,
+  Heart,
+  Volume2,
+  VolumeX,
+  Sparkles
+} from "lucide-react";
 import useCamera from "../hooks/useCamera";
 import useAudio from "../hooks/useAudio";
 import { useBooth } from "../context/BoothContext";
 import CameraFeed from "../components/camera/CameraFeed";
 import StripPreview from "../components/booth/StripPreview";
-
-// Custom Assets (Cleaned up: 4.png and 5.png removed!)
-import deskBg from "../assets/1.png";
 import catImg from "../assets/2.png";
 import polaroidsImg from "../assets/3.png";
 
+const CUT_OPTIONS = [
+  { id: "single", code: "01A", label: "Single" },
+  { id: "strip-3", code: "03A", label: "3-Cut" },
+  { id: "strip-4", code: "04A", label: "4-Strip" },
+  { id: "grid-4", code: "04B", label: "2×2 Grid" }
+];
+
 export default function Booth() {
-  const { videoRef, error, startCamera } = useCamera();
+  const { videoRef, stream, error, startCamera } = useCamera();
   const { playCountdownBeep, playShutterSound, playCatMeow, playButtonClick } = useAudio();
   const canvasRef = useRef(null);
 
@@ -22,36 +38,53 @@ export default function Booth() {
     activeModeConfig,
     photos,
     setPhotos,
+    selectedPreviewIndex,
+    setSelectedPreviewIndex,
     addPhoto,
     clearPhotos,
+    loadSampleRoll,
+    soundEnabled,
+    toggleSound,
     capturing,
     setCapturing,
     countdown,
     setCountdown,
     isFlashActive,
     triggerFlash,
-    setCurrentView
+    setCurrentView,
+    openInEditor
   } = useBooth();
 
+  const [lastStageNote, setLastStageNote] = useState("Camera on standby. Power on viewfinder to arm shutter.");
   const [isCatPurring, setIsCatPurring] = useState(false);
   const totalPhotosNeeded = activeModeConfig.count;
-  const hasStream = !!videoRef.current?.srcObject;
+  const hasStream = Boolean(stream);
+  const isComplete = photos.length >= totalPhotosNeeded;
 
-  // Cat mascot speech message based on current state
-  const getCatMessage = () => {
-    if (isCatPurring) return "Purrrrrr~ ♡ You're the cutest!";
-    if (capturing) return "3, 2, 1... Hold that pose! 📸";
-    if (photos.length >= totalPhotosNeeded) return "Yay! Perfect snaps! Click Decorate to add stickers & frames! ✿";
-    if (photos.length > 0) return `Looking great! ${photos.length}/${totalPhotosNeeded} shots taken! ✨`;
-    if (hasStream) return "Camera is live! Strike a pose and click Take Photos! ♡";
-    return "Hi there! Click the camera screen or shutter button to power on! ✿";
-  };
-
-  const handleCatClick = () => {
+  const handlePetBoothCat = () => {
     playCatMeow();
     setIsCatPurring(true);
     setTimeout(() => setIsCatPurring(false), 1800);
   };
+
+  const getCompanionLine = () => {
+    if (isCatPurring) return "Purrrr~ you're the cutest! Ready for another roll?";
+    if (capturing) return "3, 2, 1... hold that sweet pose!";
+    if (isComplete) return "Roll developed! Open Darkroom to add pastel frames & stamps.";
+    if (photos.length > 0) return `Looking lovely — ${photos.length}/${totalPhotosNeeded} frames exposed. Click any strip frame to inspect.`;
+    if (hasStream) return "Viewfinder is live! Strike a pose and press shutter or Spacebar.";
+    return lastStageNote;
+  };
+
+  const exposureStage = capturing
+    ? { code: "02", label: "EXPOSING", tone: "active" }
+    : isComplete
+    ? { code: "04", label: "PRINT READY", tone: "ready" }
+    : photos.length > 0
+    ? { code: "03", label: "DEVELOPING", tone: "warm" }
+    : hasStream
+    ? { code: "01", label: "ARMED", tone: "armed" }
+    : { code: "00", label: "STANDBY", tone: "idle" };
 
   const captureSingleFrame = () => {
     const video = videoRef.current;
@@ -62,7 +95,6 @@ export default function Booth() {
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
 
-    // Mirror selfie camera
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -72,27 +104,27 @@ export default function Booth() {
 
   const handleStartCaptureSequence = async () => {
     if (!videoRef.current?.videoWidth) {
+      setLastStageNote("Viewfinder armed. Frame your subject and press shutter.");
       await startCamera();
       return;
     }
 
     setCapturing(true);
     setPhotos([]);
+    setSelectedPreviewIndex(null);
+    setLastStageNote("Shutter sequence running. Hold steady for each exposure.");
 
     for (let i = 0; i < totalPhotosNeeded; i++) {
-      // 3-2-1 countdown
       for (let c = 3; c > 0; c--) {
         setCountdown(c);
         playCountdownBeep(false);
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise((r) => setTimeout(r, 1000));
       }
 
-      // "SMILE!"
-      setCountdown("SMILE! 📸");
+      setCountdown("EXPOSE");
       playCountdownBeep(true);
-      await new Promise(r => setTimeout(r, 400));
+      await new Promise((r) => setTimeout(r, 380));
 
-      // Shutter click + screen flash
       playShutterSound();
       triggerFlash();
 
@@ -103,79 +135,132 @@ export default function Booth() {
 
       setCountdown(null);
 
-      // Brief pause between multiple shots
       if (i < totalPhotosNeeded - 1) {
-        await new Promise(r => setTimeout(r, 1200));
+        await new Promise((r) => setTimeout(r, 1150));
       }
     }
 
     setCapturing(false);
+    setLastStageNote("Roll complete. Inspect contact strip or enter Darkroom to tone & export.");
   };
 
   const handleDownloadSingle = (photoUrl, idx) => {
     const a = document.createElement("a");
     a.href = photoUrl;
-    a.download = `snap-studio-pose-${idx + 1}.png`;
+    a.download = `snap-studio-frame-${String(idx + 1).padStart(2, "0")}.png`;
     a.click();
   };
 
+  const previewIdx =
+    selectedPreviewIndex !== null && photos[selectedPreviewIndex]
+      ? selectedPreviewIndex
+      : photos.length - 1;
+  const currentPreviewPhoto = photos[previewIdx] || null;
+
+  const todayStamp = new Date()
+    .toISOString()
+    .slice(0, 10)
+    .replace(/-/g, ".");
+
   return (
-    <div
-      className="scrapbook-desk-viewport"
-      style={{ backgroundImage: `url(${deskBg})` }}
-    >
-      {/* Top Header Scrapbook Banner */}
-      <header className="scrapbook-top-bar">
-        <div className="washi-tape-header" />
-        <div className="scrapbook-title-cluster">
-          <span className="handwritten-tag">✦ vintage virtual photobooth ✦</span>
-          <h1 className="scrapbook-title">SNAP! STUDIO</h1>
+    <div className="booth-viewport">
+      <header className="booth-top-rail">
+        <div className="booth-rail-left">
+          <button
+            type="button"
+            className="booth-rail-btn"
+            onClick={() => {
+              playButtonClick();
+              setCurrentView("landing");
+            }}
+          >
+            <ArrowLeft size={15} />
+            <span>Folio</span>
+          </button>
+
+          <button
+            type="button"
+            className="booth-rail-btn"
+            onClick={() => {
+              playButtonClick();
+              setCurrentView("gallery");
+            }}
+          >
+            <Images size={15} />
+            <span>Album</span>
+          </button>
+
+          <button
+            type="button"
+            className={`booth-rail-btn sound-toggle-btn ${!soundEnabled ? "is-muted" : ""}`}
+            onClick={() => {
+              toggleSound();
+              if (!soundEnabled) playButtonClick();
+            }}
+            title={soundEnabled ? "Mute analog audio" : "Unmute analog audio"}
+            aria-label={soundEnabled ? "Mute audio" : "Unmute audio"}
+          >
+            {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
+            <span className="tabular">{soundEnabled ? "Audio On" : "Muted"}</span>
+          </button>
         </div>
 
-        {/* Quick Mode Selector Tabs */}
-        <div className="mode-pills-bar">
-          {[
-            { id: "single", label: "Single Snap (1)" },
-            { id: "strip-3", label: "Classic 3-Cut (3)" },
-            { id: "strip-4", label: "Studio 4-Strip (4)" },
-            { id: "grid-4", label: "2x2 Collage (4)" }
-          ].map(m => (
+        <button
+          type="button"
+          className="booth-brand-mark"
+          onClick={() => {
+            playButtonClick();
+            setCurrentView("landing");
+          }}
+        >
+          <span className="booth-brand-name">SNAP! STUDIO</span>
+          <span className="booth-brand-spec">BOOTH DESK · LOCAL</span>
+        </button>
+
+        <div className="booth-mode-bar" role="group" aria-label="Film cut format">
+          {CUT_OPTIONS.map((m) => (
             <button
               key={m.id}
-              className={`mode-pill-item ${mode === m.id ? "active" : ""}`}
+              type="button"
+              className={`booth-mode-btn ${mode === m.id ? "active" : ""}`}
               onClick={() => {
                 playButtonClick();
                 setMode(m.id);
               }}
               disabled={capturing}
             >
-              {m.label}
+              <span className="mode-code tabular">{m.code}</span>
+              <span>{m.label}</span>
             </button>
           ))}
         </div>
       </header>
 
-      {/* Main Studio Scrapbook Stage: Left Strip, Center Big Digicam, Right Mascot & Memories */}
-      <main className="scrapbook-hero-stage">
-        {/* Left Column: Tilted Photo Strip & Vintage Letter Paper */}
-        <section className="stage-left-strip">
+      <main className="booth-desk-grid">
+        {/* Left Column: Live Developing Strip on Proofing Sheet */}
+        <section className="booth-col-strip" aria-label="Developing photo strip">
           <StripPreview
             photos={photos}
             mode={mode}
             totalSlots={totalPhotosNeeded}
-            onOpenEditor={() => setCurrentView("editor")}
+            selectedPreviewIndex={selectedPreviewIndex}
+            onSelectFrame={setSelectedPreviewIndex}
+            onOpenEditor={() => openInEditor({ type: "strip" })}
+            onEditSingle={(idx) => openInEditor({ type: "single", photoIndex: idx })}
             onRetake={clearPhotos}
             onDownloadSingle={handleDownloadSingle}
+            onLoadSampleRoll={() => loadSampleRoll(mode)}
           />
         </section>
 
-        {/* Center Column: Hero Vintage Digital Camera */}
-        <section className="stage-center-camera">
+        {/* Center Column: Vintage Tactile Camera & Shutter Controls */}
+        <section className="booth-col-camera" aria-label="Vintage camera viewfinder">
           <CameraFeed
             videoRef={videoRef}
             hasStream={hasStream}
             onStartCamera={startCamera}
             onCapture={handleStartCaptureSequence}
+            onLoadSampleRoll={() => loadSampleRoll(mode)}
             capturing={capturing}
             error={error}
             countdown={countdown}
@@ -186,113 +271,176 @@ export default function Booth() {
             onSelectMode={setMode}
           />
 
-          {/* Tactile Control Buttons Under Camera */}
-          <div className="camera-tactile-bar">
+          <div className="booth-shutter-bar">
+            {photos.length === 0 && (
+              <button
+                type="button"
+                className="btn-desk-demo"
+                onClick={() => {
+                  playButtonClick();
+                  loadSampleRoll(mode);
+                  setLastStageNote("Sample roll loaded into proofing strip.");
+                }}
+                disabled={capturing}
+                title="Try booth with studio sample exposures"
+              >
+                <Sparkles size={15} />
+                <span>Demo Roll</span>
+              </button>
+            )}
+
             {photos.length > 0 && (
               <button
-                className="btn-scrapbook-retake"
+                type="button"
+                className="btn-desk-secondary"
                 onClick={() => {
                   playButtonClick();
                   clearPhotos();
+                  setLastStageNote("Roll cleared. Ready for a fresh exposure sequence.");
                 }}
                 disabled={capturing}
-                title="Restart Session"
               >
-                <RotateCcw size={16} />
-                <span>Retake</span>
+                <RotateCcw size={15} />
+                <span>Clear Roll</span>
               </button>
             )}
 
             <button
-              className={`btn-scrapbook-shutter-hero ${capturing ? "capturing" : ""}`}
+              type="button"
+              className={`btn-desk-shutter ${capturing ? "capturing" : ""}`}
               onClick={handleStartCaptureSequence}
               disabled={capturing}
             >
-              <div className="shutter-inner-glow">
-                <Camera size={26} />
-              </div>
-              <span className="shutter-hero-text">
+              <Camera size={18} />
+              <span>
                 {capturing
-                  ? `SNAPPING ${photos.length}/${totalPhotosNeeded}...`
+                  ? `Exposing ${photos.length + 1} / ${totalPhotosNeeded}`
                   : hasStream
-                  ? "TAKE PHOTOS ✦"
-                  : "POWER ON & SHOOT"}
+                  ? `Release Shutter (${totalPhotosNeeded})`
+                  : "Power On Viewfinder"}
               </span>
             </button>
 
             {photos.length > 0 && (
               <button
-                className="btn-scrapbook-decorate-hero"
+                type="button"
+                className={`btn-desk-darkroom ${isComplete ? "ready" : ""}`}
                 onClick={() => {
                   playButtonClick();
-                  setCurrentView("editor");
+                  openInEditor({ type: "strip" });
                 }}
                 disabled={capturing}
               >
-                <Wand2 size={20} />
-                <span>Decorate Strip ✿</span>
+                <SlidersHorizontal size={16} />
+                <span>Open Photo Editor</span>
               </button>
             )}
           </div>
         </section>
 
-        {/* Right Column: Cat Mascot (2.png) + Polaroid Memories Preview */}
-        <section className="stage-right-companion">
-          {/* Polaroid Memory Card */}
-          <div className="polaroid-stamp-preview-box">
-            <div className="pink-stamp-card">
-              <div className="stamp-photo-area">
-                {photos.length > 0 ? (
-                  <img
-                    src={photos[photos.length - 1]}
-                    alt="Latest Memory"
-                    className="stamp-img-preview"
-                  />
+        {/* Right Column: Latest Instant Polaroid Print & Studio Cat Companion */}
+        <aside className="booth-col-polaroid" aria-label="Latest instant Polaroid print">
+          <div className="desk-telemetry-card">
+            <div className="telemetry-top">
+              <span className="telemetry-label">STUDIO COMPANION</span>
+              <span className={`stage-pill stage-${exposureStage.tone} tabular`}>
+                {exposureStage.code} · {exposureStage.label}
+              </span>
+            </div>
+
+            <div className="booth-cat-row">
+              <button
+                type="button"
+                className={`booth-cat-btn ${isCatPurring ? "purring" : ""}`}
+                onClick={handlePetBoothCat}
+                title="Click to pet the studio kitty"
+              >
+                <img src={catImg} alt="Studio cat companion" className="booth-cat-avatar" />
+                {isCatPurring && (
+                  <>
+                    <span className="floating-heart-particle heart-1" aria-hidden="true">
+                      <Heart size={14} fill="currentColor" />
+                    </span>
+                    <span className="floating-heart-particle heart-2" aria-hidden="true">
+                      <Heart size={11} fill="currentColor" />
+                    </span>
+                  </>
+                )}
+              </button>
+              <p className="telemetry-note">{getCompanionLine()}</p>
+            </div>
+
+            <div className="telemetry-meta tabular">
+              <span>FRAMES: {String(photos.length).padStart(2, "0")}/{String(totalPhotosNeeded).padStart(2, "0")}</span>
+              <span>STOCK: ISO 640</span>
+            </div>
+          </div>
+
+          <div className="instant-polaroid-tray">
+            <div className="tray-header">
+              <span>LATEST INSTANT PRINT</span>
+              <span className="tabular">{todayStamp}</span>
+            </div>
+
+            <div className="polaroid-frame-card">
+              <span className="polaroid-washi-strip" aria-hidden="true" />
+              <div className="polaroid-image-well">
+                {currentPreviewPhoto ? (
+                  <>
+                    <img
+                      key={currentPreviewPhoto + previewIdx}
+                      src={currentPreviewPhoto}
+                      alt={`Inspected Polaroid frame ${previewIdx + 1}`}
+                      className="polaroid-latest-img print-develop-enter"
+                    />
+                    <span className="polaroid-crop-corner top-left" />
+                    <span className="polaroid-crop-corner bottom-right" />
+                  </>
                 ) : (
-                  <div className="stamp-empty-art">
-                    <Heart size={28} className="heart-icon-pink" />
-                    <p>your little moment</p>
+                  <div className="polaroid-empty-well">
+                    <Aperture size={26} strokeWidth={1.5} />
+                    <span className="polaroid-empty-code">UNEXPOSED SHEET</span>
+                    <p>Your latest snap develops here right after shutter release.</p>
                   </div>
                 )}
-                <div className="stamp-polaroid-label">
-                  <span>sweet memories ♡</span>
-                </div>
+              </div>
+
+              <div className="polaroid-chin">
+                <span className="polaroid-hand-note">
+                  {currentPreviewPhoto
+                    ? `frame ${String(previewIdx + 1).padStart(2, "0")}A — keeper`
+                    : "sweet memories"}
+                </span>
+                <span className="polaroid-chin-date tabular">
+                  {photos.length > 1
+                    ? `FRAME ${previewIdx + 1}/${photos.length}`
+                    : activeModeConfig.label.toUpperCase()}
+                </span>
               </div>
             </div>
 
-            {/* Overlapping Heart Polaroids (3.png) */}
-            <div
-              className="polaroids-heart-stack"
-              title="Click for 2x2 Collage Mode"
+            <button
+              type="button"
+              className="tray-collage-shortcut"
               onClick={() => {
                 playButtonClick();
                 setMode("grid-4");
               }}
+              disabled={capturing}
+              title="Switch to 2×2 Collage Mode"
             >
-              <img src={polaroidsImg} alt="4 Heart Polaroids Stack" />
+              <img src={polaroidsImg} alt="2x2 Polaroid collage preview" />
+              <span>Quick-load 2×2 Collage Cut</span>
+            </button>
+
+            <div className="tray-privacy-foot">
+              <ShieldCheck size={14} />
+              <span>Processed strictly in-browser. Never uploaded.</span>
             </div>
           </div>
-
-          {/* Interactive Cat Mascot (2.png) */}
-          <div className="cat-mascot-section">
-            <div className="cat-dialog-balloon speech-bubble-float">
-              <p>{getCatMessage()}</p>
-              <div className="balloon-arrow" />
-            </div>
-
-            <div
-              className={`cat-avatar-interactive ${isCatPurring ? "cat-purr-active" : "cat-idle-anim"}`}
-              onClick={handleCatClick}
-              title="Click kitty to pet! Meow~"
-            >
-              <img src={catImg} alt="Studio Cat Companion" className="cat-companion-img" />
-              {isCatPurring && <span className="cat-love-emoji">💖</span>}
-            </div>
-          </div>
-        </section>
+        </aside>
       </main>
 
-      {/* Hidden processing canvas */}
       <canvas ref={canvasRef} hidden />
     </div>
   );

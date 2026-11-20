@@ -1,9 +1,18 @@
 import { useCallback, useRef } from "react";
+import { useBooth } from "../context/BoothContext";
 
 export default function useAudio() {
   const audioContextRef = useRef(null);
+  let soundEnabled = true;
+  try {
+    const booth = useBooth();
+    soundEnabled = booth?.soundEnabled ?? true;
+  } catch {
+    soundEnabled = true;
+  }
 
   const getAudioContext = useCallback(() => {
+    if (!soundEnabled) return null;
     if (!audioContextRef.current) {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (AudioCtx) {
@@ -14,10 +23,11 @@ export default function useAudio() {
       audioContextRef.current.resume();
     }
     return audioContextRef.current;
-  }, []);
+  }, [soundEnabled]);
 
   // Tactile camera button click
   const playButtonClick = useCallback(() => {
+    if (!soundEnabled) return;
     try {
       const ctx = getAudioContext();
       if (!ctx) return;
@@ -35,10 +45,11 @@ export default function useAudio() {
     } catch {
       // ignore
     }
-  }, [getAudioContext]);
+  }, [getAudioContext, soundEnabled]);
 
   // Digicam Zoom chirp
   const playZoomChirp = useCallback((isZoomIn = true) => {
+    if (!soundEnabled) return;
     try {
       const ctx = getAudioContext();
       if (!ctx) return;
@@ -56,10 +67,11 @@ export default function useAudio() {
     } catch {
       // ignore
     }
-  }, [getAudioContext]);
+  }, [getAudioContext, soundEnabled]);
 
   // Camera Power On chime
   const playPowerChime = useCallback((turningOn = true) => {
+    if (!soundEnabled) return;
     try {
       const ctx = getAudioContext();
       if (!ctx) return;
@@ -80,10 +92,11 @@ export default function useAudio() {
     } catch {
       // ignore
     }
-  }, [getAudioContext]);
+  }, [getAudioContext, soundEnabled]);
 
   // Crisp countdown beep
   const playCountdownBeep = useCallback((isFinal = false) => {
+    if (!soundEnabled) return;
     try {
       const ctx = getAudioContext();
       if (!ctx) return;
@@ -100,10 +113,11 @@ export default function useAudio() {
     } catch {
       // ignore
     }
-  }, [getAudioContext]);
+  }, [getAudioContext, soundEnabled]);
 
   // Realistic mechanical shutter click sound
   const playShutterSound = useCallback(() => {
+    if (!soundEnabled) return;
     try {
       const ctx = getAudioContext();
       if (!ctx) return;
@@ -122,6 +136,7 @@ export default function useAudio() {
 
       setTimeout(() => {
         try {
+          if (!soundEnabled) return;
           const osc2 = ctx.createOscillator();
           const gain2 = ctx.createGain();
           osc2.type = "square";
@@ -140,10 +155,11 @@ export default function useAudio() {
     } catch {
       // ignore
     }
-  }, [getAudioContext]);
+  }, [getAudioContext, soundEnabled]);
 
   // Cute Cat Purr / Meow sound effect
   const playCatMeow = useCallback(() => {
+    if (!soundEnabled) return;
     try {
       const ctx = getAudioContext();
       if (!ctx) return;
@@ -151,7 +167,6 @@ export default function useAudio() {
       const gain = ctx.createGain();
       const now = ctx.currentTime;
       osc.type = "sine";
-      // Meow pitch contour: rise then gentle fall
       osc.frequency.setValueAtTime(400, now);
       osc.frequency.exponentialRampToValueAtTime(750, now + 0.12);
       osc.frequency.exponentialRampToValueAtTime(520, now + 0.35);
@@ -167,9 +182,10 @@ export default function useAudio() {
     } catch {
       // ignore
     }
-  }, [getAudioContext]);
+  }, [getAudioContext, soundEnabled]);
 
   return {
+    soundEnabled,
     playButtonClick,
     playZoomChirp,
     playPowerChime,

@@ -1,44 +1,120 @@
 :root {
-  /* Scrapbook & Desk Paper Palette (from design.png) */
-  --bg-desk: #f3ece2;
-  --bg-kraft: #dfceb7;
-  --bg-letter: #f9f5ea;
-  --bg-lined-paper: #fbf9f4;
-  --bg-card: #ffffff;
-  
-  /* Vintage Camera Accents */
-  --camera-silver-light: #f3f4f6;
-  --camera-silver-mid: #d1d5db;
-  --camera-silver-dark: #9ca3af;
-  --camera-bezel: #6b7280;
-  --camera-screen-bg: #111417;
-  --camera-osd-green: #4ade80;
-  --camera-osd-amber: #fbbf24;
-  --camera-osd-white: #f8fafc;
-  
-  /* Bubbly Pink Pop Accents */
-  --pink-snap: #ff6584;
-  --pink-snap-shadow: #e04868;
-  --pink-light: #ffe5ec;
-  --pink-blush: #fcd5ce;
-  --pink-watercolor: #f7a8b8;
+  /* Cozy Vintage Polaroid & Contact Folio Palette */
+  --paper-archival: #f6f0e8;
+  --paper-bright: #fcf9f4;
+  --paper-warm: #ede3d6;
+  --paper-polaroid: #fdfbf7;
 
-  /* Text & Ink */
-  --ink-dark: #2c2523;
-  --ink-pencil: #524744;
-  --ink-faded: #8c7e7a;
-  --ink-blue: #3b5998;
+  /* Warm Cocoa-Espresso Proofing Mat & Camera Chassis */
+  --slate-darkroom: #2b2220;
+  --slate-elevated: #362b28;
+  --slate-surface: #423532;
+  --slate-hairline: #4d3f3b;
 
-  /* Shadows for Realistic Scrapbook Layering */
-  --shadow-paper: 0 4px 14px rgba(45, 35, 30, 0.12), 0 1px 3px rgba(45, 35, 30, 0.08);
-  --shadow-polaroid: 0 10px 28px rgba(45, 35, 30, 0.18), 0 2px 8px rgba(45, 35, 30, 0.08);
-  --shadow-camera: 0 16px 40px rgba(25, 20, 25, 0.35), 0 4px 12px rgba(25, 20, 25, 0.2);
-  --shadow-pin: 0 2px 6px rgba(0, 0, 0, 0.25);
+  /* Warm Espresso Ink */
+  --ink-primary: #2a211f;
+  --ink-secondary: #534541;
+  --ink-muted: #7d6b65;
+  --ink-on-dark: #f7f1ea;
+  --ink-on-dark-muted: #cbbdb6;
+  --ink-rule: #d9cbbd;
+  --ink-rule-strong: #2a211f;
 
-  /* Scrapbook Typography */
-  --font-hand: 'Patrick Hand', cursive, sans-serif;
-  --font-title: 'Gaegu', cursive, sans-serif;
-  --font-osd: 'VT323', monospace;
-  --font-cute: 'Quicksand', -apple-system, sans-serif;
-  --font-letter: 'Caveat', 'Patrick Hand', cursive, serif;
+  /* Vintage Strawberry-Rose & Honey Accents */
+  --vermilion: #d4556b;
+  --vermilion-hover: #bc4258;
+  --vermilion-soft: #fae4e8;
+  --blush-tape: rgba(244, 182, 194, 0.72);
+  --amber-index: #e6ad52;
+  --emerald-ready: #5c9976;
+
+  /* Hardware Metal & Viewfinder */
+  --chassis-top: #3a2f2c;
+  --chassis-body: #29201e;
+  --chassis-bezel: #181312;
+  --chassis-chrome: #d4c6be;
+
+  /* Soft Warm Print & Contact Shadows */
+  --shadow-print: 0 16px 38px rgba(42, 33, 31, 0.2), 0 4px 10px rgba(42, 33, 31, 0.1);
+  --shadow-print-dark: 0 22px 48px rgba(15, 10, 9, 0.52), 0 6px 14px rgba(15, 10, 9, 0.3);
+  --shadow-camera: 0 22px 52px rgba(42, 33, 31, 0.28), 0 6px 16px rgba(42, 33, 31, 0.15);
+  --shadow-soft: 0 8px 22px rgba(212, 85, 107, 0.22);
+
+  /* Typography (Editorial Vintage Polaroid) */
+  --font-display: "Antonio", sans-serif;
+  --font-body: "Libre Franklin", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "Courier Prime", monospace;
+  --font-hand: "Reenie Beanie", cursive;
+
+  /* Softened Tactile Radii */
+  --radius-sharp: 6px;
+  --radius-control: 8px;
+  --radius-hardware: 14px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: var(--paper-archival);
+  color: var(--ink-primary);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-body);
+  background-color: var(--paper-archival);
+  color: var(--ink-primary);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  caret-color: var(--vermilion);
+}
+
+::selection {
+  background-color: var(--vermilion-soft);
+  color: var(--ink-primary);
+}
+
+:focus-visible {
+  outline: 2px solid var(--vermilion);
+  outline-offset: 2px;
+}
+
+a {
+  color: inherit;
+  text-underline-offset: 4px;
+}
+
+button,
+input {
+  font-family: inherit;
+}
+
+/* Custom Warm Archival Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--paper-warm);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c6b2a6;
+  border-radius: 6px;
+  border: 2px solid var(--paper-warm);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--vermilion);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
 }

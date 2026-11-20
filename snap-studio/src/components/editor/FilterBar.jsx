@@ -2,26 +2,27 @@ import { FILTERS } from "../../constants/filters";
 
 export default function FilterBar({ selectedFilter, onSelectFilter }) {
   return (
-    <div className="filter-bar-component">
+    <div className="editor-panel-block">
       <div className="editor-subheading">
-        <span>FILTERS ✦</span>
+        <span>FILM STOCKS</span>
+        <span className="subheading-meta tabular">{FILTERS.length} TINTS</span>
       </div>
 
-      <div className="filter-scroll-row">
-        {FILTERS.map(f => {
+      <div className="filter-grid">
+        {FILTERS.map((f) => {
           const isSelected = selectedFilter.id === f.id;
           return (
             <button
               key={f.id}
+              type="button"
               className={`filter-chip ${isSelected ? "selected" : ""}`}
               onClick={() => onSelectFilter(f)}
             >
-              <div
+              <span
                 className="filter-sample-swatch"
                 style={{ filter: f.css }}
-              >
-                <span>✿</span>
-              </div>
+                aria-hidden="true"
+              />
               <span className="filter-name">{f.name}</span>
             </button>
           );

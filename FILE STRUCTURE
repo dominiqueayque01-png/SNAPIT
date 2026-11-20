@@ -1,107 +1,40 @@
-================================================================================
-                           SNAP! STUDIO - FILE STRUCTURE
-================================================================================
-
 snap-studio/
+│
 ├── public/
-│   ├── favicon.svg             # Application browser icon
-│   ├── icons.svg               # SVG icons asset sheet
-│   ├── frames/                 # Frame overlays and photo borders
-│   │   ├── classic-white.png
-│   │   ├── retro-film.png
-│   │   ├── pastel-dream.png
-│   │   └── vintage-stamp.png
-│   ├── stickers/               # Drag-and-drop stickers & stamps
-│   │   ├── hearts/
-│   │   ├── stars/
-│   │   ├── ribbons/
-│   │   └── doodles/
-│   └── sounds/                 # Audio cues (shutter click, countdown beep)
-│       ├── shutter.mp3
-│       └── countdown-beep.mp3
+│   ├── stickers/
+│   └── sounds/
 │
 ├── src/
-│   ├── assets/                 # Bundled static media & graphics
-│   │   ├── hero.png
-│   │   ├── react.svg
-│   │   └── vite.svg
+│   ├── components/
+│   │   ├── Navbar.jsx
+│   │   ├── Camera.jsx
+│   │   ├── Countdown.jsx
+│   │   ├── PhotoCard.jsx
+│   │   ├── PhotoStrip.jsx
+│   │   ├── FilterSelector.jsx
+│   │   └── FrameSelector.jsx
 │   │
-│   ├── components/             # Reusable UI component modules
-│   │   ├── common/             # Generic, reusable UI primitives
-│   │   │   ├── Button.jsx      # Styled buttons (primary, secondary, icon)
-│   │   │   ├── Modal.jsx       # Dialog/modal backdrop and container
-│   │   │   ├── Tabs.jsx        # Tab navigation for editor panels
-│   │   │   ├── Slider.jsx      # Adjusters for filter intensity / brush size
-│   │   │   └── Tooltip.jsx     # Informative hover hints
-│   │   │
-│   │   ├── camera/             # Camera hardware interface & capture pipeline
-│   │   │   ├── CameraFeed.jsx        # Live video stream with mirror & grid options
-│   │   │   ├── CameraControls.jsx    # Shutter button, flash toggle, timer select
-│   │   │   ├── CountdownOverlay.jsx  # 3-2-1 countdown visual animation
-│   │   │   └── DeviceSelector.jsx    # Webcam input source switcher
-│   │   │
-│   │   ├── booth/              # Photobooth session workflow
-│   │   │   ├── ModeSelector.jsx      # Single shot, 3-strip, 4-strip, 2x2 grid
-│   │   │   ├── StripPreview.jsx      # Live preview of shots taken in current session
-│   │   │   └── RetakeControls.jsx    # Retake individual shot or restart session
-│   │   │
-│   │   ├── editor/             # Post-capture customization tools
-│   │   │   ├── FilterBar.jsx         # B&W, Sepia, Film Grain, Cyber, Warm/Cool
-│   │   │   ├── FramePicker.jsx       # Polaroid, classic, film-strip frames
-│   │   │   ├── StickerCanvas.jsx     # Interactive canvas for moving/scaling stickers
-│   │   │   ├── StickerTray.jsx       # Categorized sticker drawer & selector
-│   │   │   ├── TextCustomizer.jsx    # Date stamp, custom captions, cute fonts
-│   │   │   └── ColorPicker.jsx       # Color palette picker for borders & text
-│   │   │
-│   │   └── export/             # Sharing, printing, and saving outputs
-│   │       ├── DownloadModal.jsx     # High-resolution PNG/JPG downloader
-│   │       ├── PrintView.jsx         # 2x6 standard photo strip print layout
-│   │       └── QRCodeModal.jsx       # QR code generator for direct phone saving
+│   ├── pages/
+│   │   ├── Landing.jsx
+│   │   ├── Booth.jsx
+│   │   ├── Editor.jsx
+│   │   └── Gallery.jsx
 │   │
-│   ├── context/                # Global React context providers
-│   │   ├── BoothContext.jsx    # Session state: active mode, captured photos, timer
-│   │   └── EditorContext.jsx   # Customization state: selected filters, frame, stickers
+│   ├── hooks/
+│   │   └── useCamera.js
 │   │
-│   ├── hooks/                  # Custom React hooks
-│   │   ├── useCamera.js        # WebRTC getUserMedia management & device switching
-│   │   ├── useCountdown.js     # Sound-synced countdown timer controller
-│   │   ├── useCanvasExport.js  # Multi-layer canvas compositor & image generator
-│   │   └── useAudio.js         # Sound effects player (shutter, beeps)
+│   ├── utils/
+│   │   └── photoGenerator.js
 │   │
-│   ├── pages/                  # Page-level route views
-│   │   ├── Booth.jsx           # Main capture studio screen
-│   │   ├── Editor.jsx          # Decoration & customization workspace
-│   │   └── Gallery.jsx         # Saved strips & photo history
+│   ├── styles/
+│   │   ├── variables.css
+│   │   ├── animations.css
+│   │   ├── booth.css
+│   │   ├── editor.css
+│   │   └── landing.css
 │   │
-│   ├── constants/              # Static configuration, presets & options
-│   │   ├── modes.js            # Capture mode presets (single, 4-strip, grid)
-│   │   ├── filters.js          # Filter CSS definitions & canvas color matrixes
-│   │   ├── frames.js           # Frame dimensions, paddings, and styles
-│   │   └── stickers.js         # Sticker asset catalog & metadata
-│   │
-│   ├── services/               # Utility services and pure logic
-│   │   ├── canvasCompositor.js # Composite multiple photos + frame + stickers to canvas
-│   │   ├── imageExporter.js    # Canvas-to-Blob conversion and download handler
-│   │   └── storage.js          # IndexedDB / LocalStorage photo caching service
-│   │
-│   ├── styles/                 # Modular CSS stylesheets
-│   │   ├── variables.css       # Design tokens (colors, typography, spacing, shadows)
-│   │   ├── booth.css           # Photobooth screen layout and camera styles
-│   │   ├── editor.css          # Editor toolbar, sticker canvas & drawer styling
-│   │   └── animations.css      # Shutter flash, countdown pulse, bounce animations
-│   │
-│   ├── App.jsx                 # Top-level application layout
-│   ├── main.jsx                # React DOM entry point
-│   ├── App.css                 # Application-wide global styles
-│   └── index.css               # Base CSS resets, typography, and theme variables
+│   ├── App.jsx
+│   └── main.jsx
 │
-├── dist/                       # Production build output
-├── node_modules/               # NPM dependencies
-├── .gitignore                  # Git ignore rules
-├── eslint.config.js            # ESLint rules configuration
-├── index.html                  # HTML template root
-├── package.json                # Project dependencies & scripts
-├── package-lock.json           # Locked dependency versions
-├── vite.config.js              # Vite bundler configuration
-├── README.md                   # Project documentation
-└── FILE STRUCTURE              # This file structure architecture document
+├── index.html
+└── package.json

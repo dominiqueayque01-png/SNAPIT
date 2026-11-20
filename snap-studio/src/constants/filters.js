@@ -1,51 +1,51 @@
 export const FILTERS = [
   {
     id: "normal",
-    name: "Original",
+    name: "Natural 400",
     css: "none",
     canvasFilter: "none"
   },
   {
     id: "bw",
-    name: "Classic B&W",
-    css: "grayscale(100%) contrast(110%)",
-    canvasFilter: "grayscale(100%) contrast(110%)"
+    name: "Tri-X B&W",
+    css: "grayscale(100%) contrast(114%)",
+    canvasFilter: "grayscale(100%) contrast(114%)"
   },
   {
     id: "vintage",
-    name: "Vintage Film",
-    css: "sepia(45%) contrast(95%) brightness(105%) saturate(85%)",
-    canvasFilter: "sepia(45%) contrast(95%) brightness(105%) saturate(85%)"
+    name: "Kodachrome 74",
+    css: "sepia(38%) contrast(98%) brightness(103%) saturate(88%)",
+    canvasFilter: "sepia(38%) contrast(98%) brightness(103%) saturate(88%)"
   },
   {
     id: "warm",
-    name: "Warm Sun",
-    css: "sepia(25%) saturate(130%) brightness(104%)",
-    canvasFilter: "sepia(25%) saturate(130%) brightness(104%)"
+    name: "Portra Gold",
+    css: "sepia(24%) saturate(126%) brightness(104%)",
+    canvasFilter: "sepia(24%) saturate(126%) brightness(104%)"
   },
   {
     id: "rosy",
-    name: "Rosy Sweet",
-    css: "sepia(20%) saturate(135%) hue-rotate(330deg) brightness(102%)",
-    canvasFilter: "sepia(20%) saturate(135%) hue-rotate(330deg) brightness(102%)"
+    name: "Warm Tungsten",
+    css: "sepia(20%) saturate(125%) hue-rotate(335deg) brightness(101%)",
+    canvasFilter: "sepia(20%) saturate(125%) hue-rotate(335deg) brightness(101%)"
   },
   {
     id: "cool",
-    name: "Cool Blue",
-    css: "hue-rotate(180deg) saturate(90%) contrast(95%) brightness(105%)",
-    canvasFilter: "hue-rotate(180deg) saturate(90%) contrast(95%) brightness(105%)"
+    name: "Cinestill Cool",
+    css: "hue-rotate(180deg) saturate(82%) contrast(96%) brightness(104%)",
+    canvasFilter: "hue-rotate(180deg) saturate(82%) contrast(96%) brightness(104%)"
   },
   {
     id: "noir",
-    name: "Film Noir",
-    css: "grayscale(100%) contrast(165%) brightness(85%)",
-    canvasFilter: "grayscale(100%) contrast(165%) brightness(85%)"
+    name: "Silver Noir",
+    css: "grayscale(100%) contrast(165%) brightness(86%)",
+    canvasFilter: "grayscale(100%) contrast(165%) brightness(86%)"
   },
   {
     id: "dreamy",
-    name: "Dreamy Pastel",
-    css: "brightness(112%) contrast(88%) saturate(125%)",
-    canvasFilter: "brightness(112%) contrast(88%) saturate(125%)"
+    name: "Overexposed",
+    css: "brightness(112%) contrast(88%) saturate(112%)",
+    canvasFilter: "brightness(112%) contrast(88%) saturate(112%)"
   }
 ];
 

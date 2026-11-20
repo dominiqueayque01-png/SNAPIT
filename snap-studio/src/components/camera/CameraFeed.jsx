@@ -1,4 +1,16 @@
 import { useState, useEffect } from "react";
+import {
+  Zap,
+  ZapOff,
+  Palette,
+  Power,
+  ChevronUp,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Aperture,
+  Sparkles
+} from "lucide-react";
 import CountdownOverlay from "./CountdownOverlay";
 import useAudio from "../../hooks/useAudio";
 import { FILTERS } from "../../constants/filters";
@@ -8,6 +20,7 @@ export default function CameraFeed({
   hasStream,
   onStartCamera,
   onCapture,
+  onLoadSampleRoll,
   capturing,
   error,
   countdown,
@@ -20,7 +33,7 @@ export default function CameraFeed({
   const { playButtonClick, playZoomChirp, playPowerChime } = useAudio();
   const [currentTime, setCurrentTime] = useState("");
   const [zoomLevel, setZoomLevel] = useState(1);
-  const [flashMode, setFlashMode] = useState("ON"); // "ON" | "AUTO" | "OFF"
+  const [flashMode, setFlashMode] = useState("ON");
   const [activeFilterIndex, setActiveFilterIndex] = useState(0);
   const [shutterPressed, setShutterPressed] = useState(false);
 
@@ -43,12 +56,18 @@ export default function CameraFeed({
 
   const handleZoom = (delta) => {
     playZoomChirp(delta > 0);
-    setZoomLevel(prev => Math.min(2.2, Math.max(1, +(prev + delta).toFixed(1))));
+    setZoomLevel((prev) =>
+      Math.min(2.2, Math.max(1, +(prev + delta).toFixed(1)))
+    );
   };
 
-  const handleCycleFilter = () => {
+  const handleCycleFilter = (reverse = false) => {
     playButtonClick();
-    setActiveFilterIndex(prev => (prev + 1) % FILTERS.length);
+    setActiveFilterIndex((prev) =>
+      reverse
+        ? (prev - 1 + FILTERS.length) % FILTERS.length
+        : (prev + 1) % FILTERS.length
+    );
   };
 
   const handleCycleFlash = () => {
@@ -59,6 +78,7 @@ export default function CameraFeed({
   };
 
   const handleShutterClick = () => {
+    if (capturing) return;
     playButtonClick();
     setShutterPressed(true);
     setTimeout(() => setShutterPressed(false), 200);
@@ -76,286 +96,324 @@ export default function CameraFeed({
     onStartCamera();
   };
 
+  // Keyboard shortcut listener for analog booth feel
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const tag = document.activeElement?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+
+      if (e.code === "Space") {
+        e.preventDefault();
+        handleShutterClick();
+      } else if (e.key === "w" || e.key === "W" || e.key === "ArrowUp") {
+        e.preventDefault();
+        handleZoom(0.2);
+      } else if (e.key === "t" || e.key === "T" || e.key === "ArrowDown") {
+        e.preventDefault();
+        handleZoom(-0.2);
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        handleCycleFilter(false);
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        handleCycleFilter(true);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [hasStream, capturing, activeFilterIndex, zoomLevel]);
+
   const currentFilter = FILTERS[activeFilterIndex] || FILTERS[0];
 
   return (
-    <div className="digicam-hero-container">
-      {/* Vintage Metallic Digicam Body (Enlarged Hero Camera) */}
-      <div className="digicam-body-hero">
-        {/* Top Metallic Plate */}
-        <div className="digicam-top-plate">
-          <div className="digicam-brand-badge">
-            <span className="brand-dot red" />
-            <span className="brand-model">SNAP! DIGITAL CYBER-SHOT ✦ 7.2 MEGAPIXELS</span>
+    <div className="camera-chassis-wrapper">
+      <div className={`analog-camera-body ${isFlashActive ? "shutter-firing" : ""}`}>
+        {/* Top Anodized Deck */}
+        <div className="camera-top-deck">
+          <div className="camera-model-plate">
+            <span className={`camera-led ${hasStream ? "armed" : ""}`} />
+            <span className="camera-model-name">SNAP! MODEL 74 · INSTANT RANGEFINDER</span>
           </div>
 
-          <div className="digicam-top-controls">
-            {/* Functional Flash Mode Button */}
+          <div className="camera-top-controls">
             <button
-              className="digicam-top-pill"
+              type="button"
+              className="cam-deck-btn"
               onClick={handleCycleFlash}
-              title={`Flash Mode: ${flashMode} (Click to change)`}
+              title={`Flash Mode: ${flashMode}`}
             >
-              <span>{flashMode === "OFF" ? "🚫" : "⚡"} {flashMode}</span>
+              {flashMode === "OFF" ? <ZapOff size={13} /> : <Zap size={13} />}
+              <span>{flashMode}</span>
             </button>
 
-            {/* Functional Power Button */}
             <button
-              className={`digicam-power-btn ${hasStream ? "power-on" : ""}`}
+              type="button"
+              className={`cam-power-btn ${hasStream ? "power-on" : ""}`}
               onClick={handlePowerClick}
-              title={hasStream ? "Camera Active (Click to toggle)" : "Click to Power On"}
+              title={hasStream ? "Viewfinder Active" : "Power On Viewfinder"}
             >
-              <span className="power-led" />
-              <span className="power-txt">{hasStream ? "ON" : "OFF"}</span>
+              <Power size={13} />
+              <span>{hasStream ? "ON" : "OFF"}</span>
             </button>
 
-            {/* Large Tactile Shutter Release Button */}
             <button
-              className={`digicam-hero-shutter ${shutterPressed || capturing ? "pressed" : ""}`}
+              type="button"
+              className={`cam-shutter-release ${shutterPressed || capturing ? "pressed" : ""}`}
               onClick={handleShutterClick}
               disabled={capturing}
-              title="Shutter Button (Click to Take Photo!)"
+              title="Release Shutter [Spacebar]"
+              aria-label="Release shutter"
             >
-              <div className="shutter-metal-ring">
-                <div className="shutter-inner-disc" />
-              </div>
+              <span className="shutter-collar">
+                <span className="shutter-button-core" />
+              </span>
             </button>
           </div>
         </div>
 
-        {/* Main Face: Large LCD on Left, Button Column on Right */}
-        <div className="digicam-main-face">
-          {/* Large Screen Bezel */}
-          <div className="digicam-screen-bezel">
-            <div className="digicam-lcd-display">
-              {/* Live Webcam Stream */}
+        {/* Main Chassis Face: Optical Viewfinder + Mechanical Controls */}
+        <div className="camera-main-face">
+          <div className="viewfinder-bezel">
+            <div className="viewfinder-screen">
               <video
                 ref={videoRef}
                 autoPlay
                 playsInline
                 muted
-                className={`digicam-video-stream ${!hasStream ? "hidden" : ""}`}
+                className={`viewfinder-video ${!hasStream ? "hidden" : ""}`}
                 style={{
                   transform: `scaleX(-1) scale(${zoomLevel})`,
                   filter: currentFilter.css
                 }}
               />
 
-              {/* Viewfinder Crosshair & AF Focus Target */}
               {hasStream && (
-                <div className="digicam-af-bracket">
-                  <div className="af-crosshair">
-                    <span className="af-mark top-left" />
-                    <span className="af-mark top-right" />
-                    <span className="af-mark bottom-left" />
-                    <span className="af-mark bottom-right" />
+                <>
+                  <div className="viewfinder-reticle" aria-hidden="true">
+                    <span className="reticle-corner tl" />
+                    <span className="reticle-corner tr" />
+                    <span className="reticle-corner bl" />
+                    <span className="reticle-corner br" />
+                    <span className="reticle-center-cross" />
                   </div>
-                </div>
-              )}
 
-              {/* Vintage Digicam On-Screen Display (OSD) */}
-              {hasStream && (
-                <div className="digicam-osd-layer">
-                  {/* OSD Top Bar */}
-                  <div className="osd-top-row">
-                    <div className="osd-status-group">
-                      <span className="rec-dot led-rec-blink">●</span>
-                      <span className="osd-status-text">
-                        {capturing ? "CAPTURING" : "READY"}
+                  <div className="viewfinder-osd">
+                    <div className="osd-row">
+                      <span className="osd-live-badge">
+                        <span className="osd-rec-dot led-rec-blink" />
+                        <span>{capturing ? "EXPOSING" : "ARMED"}</span>
                       </span>
-                    </div>
 
-                    <div className="osd-mid-tags">
-                      <span className="osd-tag flash">
-                        {flashMode === "OFF" ? "NO FLASH" : `FLASH ${flashMode}`}
-                      </span>
-                      <span className="osd-tag filter" onClick={handleCycleFilter}>
-                        {currentFilter.name.toUpperCase()}
-                      </span>
-                      <span className="osd-tag zoom">{zoomLevel.toFixed(1)}x ZOOM</span>
-                    </div>
-
-                    <div className="osd-battery-group">
-                      <span className="batt-format">RAW 4:3</span>
-                      <div className="batt-gauge">
-                        <div className="batt-cell" />
-                        <div className="batt-cell" />
-                        <div className="batt-cell" />
+                      <div className="osd-tags">
+                        <button
+                          type="button"
+                          className="osd-chip"
+                          onClick={() => handleCycleFilter(false)}
+                          title="Cycle film stock [← / →]"
+                        >
+                          {currentFilter.name.toUpperCase()}
+                        </button>
+                        <span className="osd-chip tabular">
+                          {zoomLevel.toFixed(1)}×
+                        </span>
                       </div>
                     </div>
-                  </div>
 
-                  {/* OSD Bottom Bar */}
-                  <div className="osd-bottom-row">
-                    <span className="osd-pic-counter">
-                      PIC [{String(currentCount).padStart(2, "0")}/{String(totalPhotos).padStart(2, "0")}]
-                    </span>
-                    <span className="osd-clock">{currentTime}</span>
-                    <span className="osd-iso-tag">ISO 200 · FINE</span>
+                    <div className="osd-row osd-bottom tabular">
+                      <span>
+                        EXP {String(currentCount).padStart(2, "0")}/
+                        {String(totalPhotos).padStart(2, "0")}
+                      </span>
+                      <span>{currentTime}</span>
+                      <span>ISO 640 · 4:3</span>
+                    </div>
                   </div>
-                </div>
+                </>
               )}
 
-              {/* Standby / Idle Screen with Bubbly Pink "SNAP" Logo (From design.png!) */}
               {!hasStream && (
-                <div className="digicam-standby-screen" onClick={handleShutterClick}>
-                  <div className="standby-lcd-grid" />
-                  <div className="snap-logo-bubble snap-title-glow">
-                    <span>SNAP</span>
+                <div className="viewfinder-standby" onClick={handleShutterClick}>
+                  <div className="standby-aperture-ring">
+                    <Aperture size={34} strokeWidth={1.5} />
                   </div>
-                  <div className="standby-callout">
-                    <button className="standby-power-btn" onClick={handleShutterClick}>
-                      <span className="btn-sparkle">✦</span>
-                      <span>TAP TO POWER ON CAMERA</span>
-                      <span className="btn-sparkle">✦</span>
+                  <div className="standby-wordmark">SNAP! STUDIO</div>
+                  <div className="standby-actions-group">
+                    <button
+                      type="button"
+                      className="standby-activate-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShutterClick();
+                      }}
+                    >
+                      Power On Camera
                     </button>
-                    <p className="standby-subtext">Click the screen or top shutter button</p>
+                    {onLoadSampleRoll && (
+                      <button
+                        type="button"
+                        className="standby-demo-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onLoadSampleRoll();
+                        }}
+                      >
+                        <Sparkles size={13} />
+                        <span>Load Sample Roll to Test</span>
+                      </button>
+                    )}
                   </div>
+                  <p className="standby-caption">
+                    Local webcam feed only · Press [Spacebar] or top red button to shoot
+                  </p>
                 </div>
               )}
 
-              {/* 3-2-1 Countdown Overlay */}
               <CountdownOverlay countdown={countdown} />
-
-              {/* Shutter Screen Flash */}
-              {isFlashActive && <div className="flash-screen flash-active" />}
+              {isFlashActive && flashMode !== "OFF" && (
+                <div className="flash-screen flash-active" />
+              )}
             </div>
           </div>
 
-          {/* Right Digicam Button Panel */}
-          <div className="digicam-controls-column">
-            {/* W/T Optical Zoom Rocker */}
-            <div className="digicam-zoom-section">
-              <span className="zoom-label">ZOOM</span>
-              <div className="digicam-zoom-rocker">
+          {/* Right Mechanical Control Column */}
+          <div className="camera-controls-rail">
+            <div className="control-block">
+              <span className="control-micro-label">OPTICAL</span>
+              <div className="zoom-rocker">
                 <button
-                  className="btn-zoom wide"
+                  type="button"
+                  className="zoom-btn"
                   onClick={() => handleZoom(-0.2)}
-                  title="Zoom Out (Wide)"
+                  title="Zoom Out (Wide) [T]"
                 >
                   W
                 </button>
-                <div className="zoom-pivot" />
+                <span className="zoom-divider" />
                 <button
-                  className="btn-zoom tele"
+                  type="button"
+                  className="zoom-btn"
                   onClick={() => handleZoom(0.2)}
-                  title="Zoom In (Tele)"
+                  title="Zoom In (Tele) [W]"
                 >
                   T
                 </button>
               </div>
             </div>
 
-            {/* Quick Filter & Flash Mode Buttons */}
-            <div className="digicam-btn-row">
+            <div className="control-pair">
               <button
-                className="btn-digi-round"
-                onClick={handleCycleFilter}
-                title="Cycle Filter (B&W, Vintage, Rosy, etc.)"
+                type="button"
+                className="mech-round-btn"
+                onClick={() => handleCycleFilter(false)}
+                title="Cycle Film Stock [← / →]"
               >
-                <span>🎨</span>
-                <span className="btn-subtext">FLTR</span>
+                <Palette size={14} />
+                <span>STOCK</span>
               </button>
 
               <button
-                className="btn-digi-round"
+                type="button"
+                className="mech-round-btn"
                 onClick={handleCycleFlash}
-                title="Toggle Flash (Auto, On, Off)"
+                title="Cycle Flash Mode"
               >
-                <span>⚡</span>
-                <span className="btn-subtext">FLASH</span>
+                {flashMode === "OFF" ? <ZapOff size={14} /> : <Zap size={14} />}
+                <span>FLASH</span>
               </button>
             </div>
 
-            {/* Circular 4-Way D-Pad with Center SET Button */}
-            <div className="digicam-dpad-module">
-              <div className="dpad-cross">
-                <button
-                  className="dpad-btn up"
-                  onClick={() => handleZoom(0.2)}
-                  title="Zoom In"
-                >
-                  ▲
-                </button>
-                <button
-                  className="dpad-btn left"
-                  onClick={() => {
-                    playButtonClick();
-                    setActiveFilterIndex(prev => (prev - 1 + FILTERS.length) % FILTERS.length);
-                  }}
-                  title="Previous Filter"
-                >
-                  ◀
-                </button>
-                <button
-                  className="dpad-center-ok"
-                  onClick={handleShutterClick}
-                  title="SET / Capture Shutter"
-                >
-                  <span>SET</span>
-                </button>
-                <button
-                  className="dpad-btn right"
-                  onClick={handleCycleFilter}
-                  title="Next Filter"
-                >
-                  ▶
-                </button>
-                <button
-                  className="dpad-btn down"
-                  onClick={() => handleZoom(-0.2)}
-                  title="Zoom Out"
-                >
-                  ▼
-                </button>
-              </div>
+            <div className="dpad-dial">
+              <button
+                type="button"
+                className="dpad-dir up"
+                onClick={() => handleZoom(0.2)}
+                aria-label="Zoom in"
+                title="Zoom in [W]"
+              >
+                <ChevronUp size={14} />
+              </button>
+              <button
+                type="button"
+                className="dpad-dir left"
+                onClick={() => handleCycleFilter(true)}
+                aria-label="Previous film stock"
+                title="Previous film stock [←]"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <button
+                type="button"
+                className="dpad-center"
+                onClick={handleShutterClick}
+                disabled={capturing}
+                aria-label="Trigger shutter"
+                title="Release Shutter [Space]"
+              >
+                EXP
+              </button>
+              <button
+                type="button"
+                className="dpad-dir right"
+                onClick={() => handleCycleFilter(false)}
+                aria-label="Next film stock"
+                title="Next film stock [→]"
+              >
+                <ChevronRight size={14} />
+              </button>
+              <button
+                type="button"
+                className="dpad-dir down"
+                onClick={() => handleZoom(-0.2)}
+                aria-label="Zoom out"
+                title="Zoom out [T]"
+              >
+                <ChevronDown size={14} />
+              </button>
             </div>
 
-            {/* Mode Selector Pill Buttons Styled like Camera Dials */}
-            <div className="camera-mode-dial-compact">
-              <span className="dial-label">MODE</span>
-              <div className="dial-buttons-grid">
+            <div className="control-block">
+              <span className="control-micro-label">CUT</span>
+              <div className="cut-dial-grid">
                 {[
                   { id: "single", label: "1" },
                   { id: "strip-3", label: "3" },
                   { id: "strip-4", label: "4" },
-                  { id: "grid-4", label: "2x2" }
-                ].map(m => (
+                  { id: "grid-4", label: "2×2" }
+                ].map((m) => (
                   <button
                     key={m.id}
-                    className={`dial-mini-btn ${mode === m.id ? "active" : ""}`}
+                    type="button"
+                    className={`cut-dial-btn tabular ${mode === m.id ? "active" : ""}`}
                     onClick={() => {
                       playButtonClick();
                       if (onSelectMode) onSelectMode(m.id);
                     }}
                     disabled={capturing}
-                    title={`${m.label} Photo Mode`}
                   >
                     {m.label}
                   </button>
                 ))}
               </div>
             </div>
-
-            {/* Speaker Grille Holes */}
-            <div className="digicam-speaker-grille">
-              <div className="mic-hole" />
-              <div className="mic-hole" />
-              <div className="mic-hole" />
-              <div className="mic-hole" />
-            </div>
           </div>
-        </div>
-
-        {/* Lanyard Wrist Strap Hanging Down on Right Edge (From design.png!) */}
-        <div className="digicam-strap-assembly">
-          <div className="strap-lug" />
-          <div className="strap-cord" />
-          <div className="beaded-wrist-loop" />
         </div>
       </div>
 
-      {error && <div className="digicam-error-pill">{error}</div>}
+      {error && (
+        <div className="camera-error-banner" role="alert">
+          <span>{error}</span>
+          {onLoadSampleRoll && (
+            <button
+              type="button"
+              className="btn-error-demo"
+              onClick={onLoadSampleRoll}
+            >
+              Load Sample Roll Instead
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

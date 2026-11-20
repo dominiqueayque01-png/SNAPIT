@@ -10,9 +10,8 @@ body {
   padding: 0;
   width: 100%;
   min-height: 100vh;
-  background-color: #f3ece2;
-  font-family: 'Patrick Hand', 'Gaegu', 'Quicksand', cursive, sans-serif;
-  color: #2c2523;
+  background-color: #f6f0e8;
+  color: #2a211f;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

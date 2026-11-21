@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowLeft,
   Trash2,
@@ -9,26 +9,65 @@ import {
   X,
   Eye,
   Sparkles,
-  Pencil
+  Pencil,
+  QrCode,
+  Cloud
 } from "lucide-react";
 import { useBooth } from "../context/BoothContext";
 import useAudio from "../hooks/useAudio";
 import { getSavedStrips, deleteSavedStrip } from "../services/storage";
+import { fetchServerStrips, deleteServerStrip } from "../services/api";
 import { downloadImage } from "../services/imageExporter";
+import QRCodeModal from "../components/export/QRCodeModal";
 
 export default function Gallery() {
   const { setCurrentView, loadSampleRoll, mode, openInEditor } = useBooth();
   const { playButtonClick } = useAudio();
   const [gallery, setGallery] = useState(() => getSavedStrips());
+  const [cloudOnline, setCloudOnline] = useState(false);
   const [lightboxItem, setLightboxItem] = useState(null);
+  const [qrItem, setQrItem] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
-  const handleDelete = (id) => {
+  useEffect(() => {
+    let active = true;
+    const loadCloud = async () => {
+      try {
+        const res = await fetchServerStrips({ limit: 40 });
+        if (!active) return;
+        setCloudOnline(true);
+        const localItems = getSavedStrips().map((item) => ({
+          ...item,
+          source: "local"
+        }));
+        const merged = [...res.items, ...localItems];
+        setGallery(merged);
+      } catch {
+        if (!active) return;
+        setCloudOnline(false);
+      }
+    };
+    loadCloud();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleDelete = async (item) => {
     playButtonClick();
-    const updated = deleteSavedStrip(id);
-    setGallery(updated);
+    if (item.source === "cloud") {
+      try {
+        await deleteServerStrip(item.id);
+      } catch {
+        // ignore network error on delete
+      }
+      setGallery((prev) => prev.filter((s) => s.id !== item.id));
+    } else {
+      deleteSavedStrip(item.id);
+      setGallery((prev) => prev.filter((s) => s.id !== item.id));
+    }
     setDeleteConfirmId(null);
-    if (lightboxItem?.id === id) {
+    if (lightboxItem?.id === item.id) {
       setLightboxItem(null);
     }
   };
@@ -85,11 +124,12 @@ export default function Gallery() {
         </div>
 
         <div className="editor-header-title">
-          <h1>LOCAL ARCHIVE</h1>
+          <h1>{cloudOnline ? "STUDIO ARCHIVE" : "LOCAL ARCHIVE"}</h1>
         </div>
 
-        <div className="gallery-count-badge tabular">
-          {String(gallery.length).padStart(2, "0")} PRINTS
+        <div className="gallery-count-badge tabular" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+          {cloudOnline && <Cloud size={13} />}
+          <span>{String(gallery.length).padStart(2, "0")} PRINTS</span>
         </div>
       </header>
 
@@ -152,7 +192,7 @@ export default function Gallery() {
                     title="Click to view full-size print"
                   >
                     <img
-                      src={item.imageUrl}
+                      src={item.thumbUrl || item.imageUrl}
                       alt={item.caption || "Saved Polaroid strip"}
                       className="archive-card-thumb"
                     />
@@ -168,7 +208,7 @@ export default function Gallery() {
                       <button
                         type="button"
                         className="btn-confirm-del-yes"
-                        onClick={() => handleDelete(item.id)}
+                        onClick={() => handleDelete(item)}
                       >
                         Delete
                       </button>
@@ -205,6 +245,20 @@ export default function Gallery() {
                         <Download size={14} />
                         <span>PNG</span>
                       </button>
+                      {item.shareUrl && (
+                        <button
+                          type="button"
+                          className="btn-archive-action"
+                          onClick={() => {
+                            playButtonClick();
+                            setQrItem(item);
+                          }}
+                          title="Mobile QR Download"
+                          aria-label="Mobile QR Download"
+                        >
+                          <QrCode size={14} />
+                        </button>
+                      )}
                       <button
                         type="button"
                         className="btn-archive-action print-btn"
@@ -297,6 +351,13 @@ export default function Gallery() {
           </div>
         </div>
       )}
+      <QRCodeModal
+        isOpen={!!qrItem}
+        onClose={() => setQrItem(null)}
+        shareUrl={qrItem?.shareUrl}
+        qrDataUrl={qrItem?.qrEndpoint}
+        shortCode={qrItem?.shortCode}
+      />
     </div>
   );
 }

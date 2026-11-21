@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
-import { Download, Share2, X, Check, BookmarkPlus, Film } from "lucide-react";
+import { Download, Share2, X, Check, BookmarkPlus, Film, QrCode, Cloud } from "lucide-react";
 import { useEditor } from "../../context/EditorContext";
 import { exportKonvaComposition } from "../../services/konvaExporter";
 import { downloadImage, shareImage } from "../../services/imageExporter";
 import { saveStripToGallery } from "../../services/storage";
+import { uploadStripToServer } from "../../services/api";
+import QRCodeModal from "../export/QRCodeModal";
 
 export default function ExportModal({ isOpen, onClose }) {
   const {
@@ -23,6 +25,9 @@ export default function ExportModal({ isOpen, onClose }) {
   });
   const [downloaded, setDownloaded] = useState(false);
   const [savedToAlbum, setSavedToAlbum] = useState(false);
+  const [syncingCloud, setSyncingCloud] = useState(false);
+  const [cloudRecord, setCloudRecord] = useState(null);
+  const [isQrOpen, setIsQrOpen] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -33,6 +38,8 @@ export default function ExportModal({ isOpen, onClose }) {
       if (cancelled) return;
       setSavedToAlbum(false);
       setDownloaded(false);
+      setCloudRecord(null);
+      setIsQrOpen(false);
       setExportState({ url: null, rendering: true, error: "" });
 
       try {
@@ -91,15 +98,56 @@ export default function ExportModal({ isOpen, onClose }) {
     setTimeout(() => setDownloaded(false), 2600);
   };
 
-  const handleSaveAlbum = () => {
-    if (!previewUrl || savedToAlbum) return;
-    saveStripToGallery({
-      imageUrl: previewUrl,
-      mode: "custom-edit",
-      caption: present.frameCaption || present.title
-    });
-    setSavedToAlbum(true);
-    flashStatus("Saved to your local Memories Album.", "success");
+  const syncStripToBackend = async () => {
+    if (cloudRecord) return cloudRecord;
+    setSyncingCloud(true);
+    try {
+      const uploaded = await uploadStripToServer({
+        dataUrl: previewUrl,
+        mode: present.stripLayout?.mode || "custom-edit",
+        title: present.title || "SNAP! Studio Print",
+        caption: present.stripLayout?.caption || present.frameCaption || "",
+        paperColor: present.stripLayout?.paperColor || present.frameColor || "#fdfbf7",
+        textColor: present.stripLayout?.textColor || present.frameTextColor || "#2a211f",
+        filterId: present.photoFilterId || "normal"
+      });
+      setCloudRecord(uploaded);
+      return uploaded;
+    } finally {
+      setSyncingCloud(false);
+    }
+  };
+
+  const handleSaveAlbum = async () => {
+    if (!previewUrl || savedToAlbum || syncingCloud) return;
+    try {
+      await syncStripToBackend();
+      setSavedToAlbum(true);
+      flashStatus("Saved to Cloud Archive & ready for mobile QR!", "success");
+    } catch {
+      // Graceful offline fallback to browser localStorage
+      saveStripToGallery({
+        imageUrl: previewUrl,
+        mode: present.stripLayout?.mode || "custom-edit",
+        caption: present.stripLayout?.caption || present.frameCaption || present.title
+      });
+      setSavedToAlbum(true);
+      flashStatus("Backend offline — saved locally to this browser.", "info");
+    }
+  };
+
+  const handleOpenQr = async () => {
+    if (!previewUrl || syncingCloud) return;
+    try {
+      await syncStripToBackend();
+      setSavedToAlbum(true);
+      setIsQrOpen(true);
+    } catch (err) {
+      flashStatus(
+        err.message || "Start the backend server to generate mobile QR download links.",
+        "error"
+      );
+    }
   };
 
   const handleShare = () => {
@@ -230,10 +278,33 @@ export default function ExportModal({ isOpen, onClose }) {
             type="button"
             className="btn-share-secondary"
             onClick={handleSaveAlbum}
-            disabled={rendering || !previewUrl || savedToAlbum}
+            disabled={rendering || !previewUrl || savedToAlbum || syncingCloud}
           >
-            {savedToAlbum ? <Check size={16} /> : <BookmarkPlus size={16} />}
-            <span>{savedToAlbum ? "In Album" : "Save to Album"}</span>
+            {savedToAlbum ? (
+              cloudRecord ? <Cloud size={16} /> : <Check size={16} />
+            ) : (
+              <BookmarkPlus size={16} />
+            )}
+            <span>
+              {syncingCloud
+                ? "Syncing..."
+                : savedToAlbum
+                ? cloudRecord
+                  ? "Cloud Saved"
+                  : "In Album"
+                : "Save to Album"}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className="btn-share-secondary"
+            onClick={handleOpenQr}
+            disabled={rendering || !previewUrl || syncingCloud}
+            title="Generate scannable mobile download QR code"
+          >
+            <QrCode size={16} />
+            <span>Mobile QR</span>
           </button>
 
           <button
@@ -247,6 +318,14 @@ export default function ExportModal({ isOpen, onClose }) {
           </button>
         </div>
       </div>
+
+      <QRCodeModal
+        isOpen={isQrOpen}
+        onClose={() => setIsQrOpen(false)}
+        shareUrl={cloudRecord?.shareUrl}
+        qrDataUrl={cloudRecord?.qrDataUrl || cloudRecord?.qrEndpoint}
+        shortCode={cloudRecord?.shortCode}
+      />
     </div>
   );
 }

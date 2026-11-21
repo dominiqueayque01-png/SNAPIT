@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "dev:client": "npm --prefix snap-studio run dev",
+    "build:client": "npm --prefix snap-studio run build"
+  },
   "dependencies": {
     "konva": "^10.9.1",
     "lucide-react": "^1.73.0",

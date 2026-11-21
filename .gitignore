@@ -1,0 +1,6 @@
+# Dependencies
+node_modules/
+snap-studio/node_modules/
+
+# Build outputs
+snap-studio/dist/
